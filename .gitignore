@@ -1,0 +1,19 @@
+# Virtual Environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Model files
+models/
+
+# Outputs
+outputs/
+
+# Dataset (very important)
+dataset/
+
+# OS junk
+.DS_Store
+Thumbs.db
