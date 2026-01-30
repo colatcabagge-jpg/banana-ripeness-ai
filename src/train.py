@@ -1,6 +1,7 @@
 ﻿import os
 import json
 import datetime
+import argparse
 from pathlib import Path
 
 import tensorflow as tf
@@ -10,13 +11,12 @@ from tensorflow.keras import layers
 from src.utils import TRAIN_DIR, VAL_DIR, CLASS_NAMES, IMG_SIZE, BATCH_SIZE, SEED
 
 
-# Ensure core folders exist
 os.makedirs("models", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)
 
 
 # ===============================
-# 🔬 EXPERIMENT SYSTEM HELPERS
+# CONFIG + EXPERIMENT HELPERS
 # ===============================
 
 def load_member_config():
@@ -47,7 +47,7 @@ def prepare_experiment_environment(exp_id):
 
 
 # ===============================
-# 🧠 MODEL
+# MODEL
 # ===============================
 
 def build_model(num_classes: int):
@@ -56,7 +56,7 @@ def build_model(num_classes: int):
         include_top=False,
         weights="imagenet"
     )
-    base.trainable = False  # MVP: freeze backbone
+    base.trainable = False
 
     inputs = keras.Input(shape=(IMG_SIZE[0], IMG_SIZE[1], 3))
     x = keras.applications.mobilenet_v2.preprocess_input(inputs)
@@ -65,26 +65,51 @@ def build_model(num_classes: int):
     x = layers.Dropout(0.2)(x)
     outputs = layers.Dense(num_classes, activation="softmax")(x)
 
-    model = keras.Model(inputs, outputs)
-    return model
+    return keras.Model(inputs, outputs)
 
 
 # ===============================
-# 🚀 MAIN TRAINING
+# DATASET SAMPLING
+# ===============================
+
+def sample_dataset(dataset, fraction):
+    total_batches = tf.data.experimental.cardinality(dataset).numpy()
+    take_batches = max(1, int(total_batches * fraction))
+    return dataset.take(take_batches)
+
+
+# ===============================
+# MAIN
 # ===============================
 
 def main():
 
-    # ===== Load Config =====
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", default="dev", choices=["dev", "full"])
+    args = parser.parse_args()
+
+    mode = args.mode.lower()
+
+    # ===== Mode Settings =====
+    if mode == "dev":
+        EPOCHS = 2
+        SAMPLE_FRAC = 0.3
+        USE_CACHE = False
+    else:
+        EPOCHS = 15
+        SAMPLE_FRAC = 1.0
+        USE_CACHE = True
+
+    # ===== Config =====
     config = load_member_config()
     member_name = config["member_name"]
     laptop_name = config["laptop_name"]
 
-    exp_id = generate_experiment_id(member_name)
+    exp_id = generate_experiment_id(member_name + "-" + mode)
     output_dir, model_path = prepare_experiment_environment(exp_id)
 
     print("\n=====================================")
-    print(" EXPERIMENT STARTED")
+    print(f" MODE: {mode.upper()}")
     print("=====================================")
     print(f"Experiment ID: {exp_id}")
     print(f"Member: {member_name}")
@@ -113,20 +138,27 @@ def main():
         shuffle=False
     )
 
+    # ===== Sampling =====
+    train_ds = sample_dataset(train_ds, SAMPLE_FRAC)
+    val_ds = sample_dataset(val_ds, SAMPLE_FRAC)
+
     AUTOTUNE = tf.data.AUTOTUNE
-    train_ds = train_ds.cache().prefetch(buffer_size=AUTOTUNE)
-    val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+    if USE_CACHE:
+        train_ds = train_ds.cache()
+
+    train_ds = train_ds.prefetch(AUTOTUNE)
+    val_ds = val_ds.prefetch(AUTOTUNE)
 
     # ===== Model =====
     model = build_model(num_classes=len(CLASS_NAMES))
 
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+        optimizer=keras.optimizers.Adam(1e-3),
         loss="categorical_crossentropy",
         metrics=["accuracy"]
     )
 
-    # ===== Callbacks =====
     callbacks = [
         keras.callbacks.ModelCheckpoint(
             str(model_path),
@@ -136,16 +168,15 @@ def main():
         ),
         keras.callbacks.EarlyStopping(
             monitor="val_accuracy",
-            patience=5,
+            patience=3,
             restore_best_weights=True
         )
     ]
 
-    # ===== Training =====
     history = model.fit(
         train_ds,
         validation_data=val_ds,
-        epochs=15,
+        epochs=EPOCHS,
         callbacks=callbacks
     )
 
@@ -154,10 +185,11 @@ def main():
 
     with open(metrics_path, "w") as f:
         f.write(f"Experiment ID: {exp_id}\n")
+        f.write(f"Mode: {mode}\n")
         f.write(f"Member: {member_name}\n")
         f.write(f"Laptop: {laptop_name}\n")
-        f.write(f"Final Train Accuracy: {history.history['accuracy'][-1]}\n")
-        f.write(f"Final Val Accuracy: {history.history['val_accuracy'][-1]}\n")
+        f.write(f"Train Acc: {history.history['accuracy'][-1]}\n")
+        f.write(f"Val Acc: {history.history['val_accuracy'][-1]}\n")
 
     print("\n=====================================")
     print(" TRAINING COMPLETE")
