@@ -17,3 +17,5 @@ dataset/
 # OS junk
 .DS_Store
 Thumbs.db
+
+config/member_config.json
