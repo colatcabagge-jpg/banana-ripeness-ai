@@ -7,6 +7,7 @@ from pathlib import Path
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+import matplotlib.pyplot as plt
 
 from src.utils import TRAIN_DIR, VAL_DIR, CLASS_NAMES, IMG_SIZE, BATCH_SIZE, SEED
 
@@ -79,6 +80,60 @@ def sample_dataset(dataset, fraction):
 
 
 # ===============================
+# GRAPH SAVE
+# ===============================
+
+def save_training_plots(history, output_dir):
+
+    # Accuracy Plot
+    plt.figure()
+    plt.plot(history.history["accuracy"], label="train_accuracy")
+    plt.plot(history.history["val_accuracy"], label="val_accuracy")
+    plt.title("Accuracy vs Epoch")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.savefig(output_dir / "accuracy_plot.png")
+    plt.close()
+
+    # Loss Plot
+    plt.figure()
+    plt.plot(history.history["loss"], label="train_loss")
+    plt.plot(history.history["val_loss"], label="val_loss")
+    plt.title("Loss vs Epoch")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig(output_dir / "loss_plot.png")
+    plt.close()
+
+
+# ===============================
+# MARKDOWN SUMMARY
+# ===============================
+
+def generate_markdown_summary(exp_id, member, laptop, mode, history, output_dir):
+
+    summary_path = output_dir / "summary.md"
+
+    with open(summary_path, "w") as f:
+        f.write(f"# Experiment {exp_id}\n\n")
+        f.write("## Experiment Info\n")
+        f.write(f"- Member: {member}\n")
+        f.write(f"- Laptop: {laptop}\n")
+        f.write(f"- Mode: {mode}\n\n")
+
+        f.write("## Final Metrics\n")
+        f.write(f"- Train Accuracy: {history.history['accuracy'][-1]:.4f}\n")
+        f.write(f"- Validation Accuracy: {history.history['val_accuracy'][-1]:.4f}\n")
+        f.write(f"- Train Loss: {history.history['loss'][-1]:.4f}\n")
+        f.write(f"- Validation Loss: {history.history['val_loss'][-1]:.4f}\n\n")
+
+        f.write("## Notes\n")
+        f.write("Auto generated experiment summary.\n")
+
+
+# ===============================
 # MAIN
 # ===============================
 
@@ -90,7 +145,6 @@ def main():
 
     mode = args.mode.lower()
 
-    # ===== Mode Settings =====
     if mode == "dev":
         EPOCHS = 2
         SAMPLE_FRAC = 0.3
@@ -100,7 +154,7 @@ def main():
         SAMPLE_FRAC = 1.0
         USE_CACHE = True
 
-    # ===== Config =====
+    # Config
     config = load_member_config()
     member_name = config["member_name"]
     laptop_name = config["laptop_name"]
@@ -116,7 +170,7 @@ def main():
     print(f"Laptop: {laptop_name}")
     print("=====================================\n")
 
-    # ===== Dataset =====
+    # Dataset
     train_ds = keras.utils.image_dataset_from_directory(
         TRAIN_DIR,
         labels="inferred",
@@ -138,7 +192,6 @@ def main():
         shuffle=False
     )
 
-    # ===== Sampling =====
     train_ds = sample_dataset(train_ds, SAMPLE_FRAC)
     val_ds = sample_dataset(val_ds, SAMPLE_FRAC)
 
@@ -150,7 +203,7 @@ def main():
     train_ds = train_ds.prefetch(AUTOTUNE)
     val_ds = val_ds.prefetch(AUTOTUNE)
 
-    # ===== Model =====
+    # Model
     model = build_model(num_classes=len(CLASS_NAMES))
 
     model.compile(
@@ -180,7 +233,7 @@ def main():
         callbacks=callbacks
     )
 
-    # ===== Save Metrics =====
+    # Save Metrics
     metrics_path = output_dir / "metrics.txt"
 
     with open(metrics_path, "w") as f:
@@ -191,12 +244,16 @@ def main():
         f.write(f"Train Acc: {history.history['accuracy'][-1]}\n")
         f.write(f"Val Acc: {history.history['val_accuracy'][-1]}\n")
 
+    # NEW FEATURES
+    save_training_plots(history, output_dir)
+    generate_markdown_summary(exp_id, member_name, laptop_name, mode, history, output_dir)
+
     print("\n=====================================")
     print(" TRAINING COMPLETE")
     print("=====================================")
     print(f"Experiment: {exp_id}")
     print(f"Model Saved: {model_path}")
-    print(f"Metrics Saved: {metrics_path}")
+    print(f"Outputs Folder: {output_dir}")
     print("=====================================\n")
 
 
