@@ -86,7 +86,6 @@ def sample_dataset(dataset, fraction):
 
 def save_training_plots(history, output_dir):
 
-    # Accuracy Plot
     plt.figure()
     plt.plot(history.history["accuracy"], label="train_accuracy")
     plt.plot(history.history["val_accuracy"], label="val_accuracy")
@@ -97,7 +96,6 @@ def save_training_plots(history, output_dir):
     plt.savefig(output_dir / "accuracy_plot.png")
     plt.close()
 
-    # Loss Plot
     plt.figure()
     plt.plot(history.history["loss"], label="train_loss")
     plt.plot(history.history["val_loss"], label="val_loss")
@@ -134,7 +132,6 @@ def generate_markdown_summary(exp_id, member, laptop, mode, history, output_dir)
         f.write("Auto generated experiment summary.\n")
 
 
-
 # ===============================
 # MAIN
 # ===============================
@@ -156,10 +153,21 @@ def main():
         SAMPLE_FRAC = 1.0
         USE_CACHE = True
 
-    # Config
+    # -------- CONFIG (SAFE + BACKWARD COMPATIBLE) --------
     config = load_member_config()
-    member_name = config["member_name"]
-    laptop_name = config["laptop_name"]
+
+    member_name = (
+        config.get("member_name")
+        or config.get("member")
+        or "unknown"
+    )
+
+    laptop_name = (
+        config.get("laptop_name")
+        or config.get("laptop")
+        or "unknown"
+    )
+    # -----------------------------------------------------
 
     exp_id = generate_experiment_id(member_name + "-" + mode)
     output_dir, model_path = prepare_experiment_environment(exp_id)
@@ -205,7 +213,6 @@ def main():
     train_ds = train_ds.prefetch(AUTOTUNE)
     val_ds = val_ds.prefetch(AUTOTUNE)
 
-    # Model
     model = build_model(num_classes=len(CLASS_NAMES))
 
     model.compile(
@@ -235,7 +242,6 @@ def main():
         callbacks=callbacks
     )
 
-    # Save Metrics
     metrics_path = output_dir / "metrics.txt"
 
     with open(metrics_path, "w") as f:
@@ -246,11 +252,11 @@ def main():
         f.write(f"Train Acc: {history.history['accuracy'][-1]}\n")
         f.write(f"Val Acc: {history.history['val_accuracy'][-1]}\n")
 
-    # NEW FEATURES
     save_training_plots(history, output_dir)
-    generate_markdown_summary(exp_id, member_name, laptop_name, mode, history, output_dir)
+    generate_markdown_summary(
+        exp_id, member_name, laptop_name, mode, history, output_dir
+    )
 
-    # ===== REGISTRY AUTO REGISTER =====
     final_val_acc = history.history["val_accuracy"][-1]
 
     register_model(
@@ -260,7 +266,6 @@ def main():
         mode=mode,
         member=member_name
     )
-
 
     print("\n=====================================")
     print(" TRAINING COMPLETE")
