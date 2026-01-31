@@ -10,6 +10,7 @@ from tensorflow.keras import layers
 import matplotlib.pyplot as plt
 
 from src.utils import TRAIN_DIR, VAL_DIR, CLASS_NAMES, IMG_SIZE, BATCH_SIZE, SEED
+from src.registry_manager import register_model
 
 
 os.makedirs("models", exist_ok=True)
@@ -133,6 +134,7 @@ def generate_markdown_summary(exp_id, member, laptop, mode, history, output_dir)
         f.write("Auto generated experiment summary.\n")
 
 
+
 # ===============================
 # MAIN
 # ===============================
@@ -247,6 +249,18 @@ def main():
     # NEW FEATURES
     save_training_plots(history, output_dir)
     generate_markdown_summary(exp_id, member_name, laptop_name, mode, history, output_dir)
+
+    # ===== REGISTRY AUTO REGISTER =====
+    final_val_acc = history.history["val_accuracy"][-1]
+
+    register_model(
+        exp_id=exp_id,
+        model_path=model_path,
+        accuracy=final_val_acc,
+        mode=mode,
+        member=member_name
+    )
+
 
     print("\n=====================================")
     print(" TRAINING COMPLETE")
