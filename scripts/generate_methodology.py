@@ -1,3 +1,22 @@
+from pathlib import Path
+from datetime import datetime
+import json
+
+from src.journal_logger import log_event
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DOCS_DIR = PROJECT_ROOT / "docs"
+REGISTRY_PATH = PROJECT_ROOT / "registry" / "model_registry.json"
+
+
+def generate_methodology():
+    DOCS_DIR.mkdir(exist_ok=True)
+
+    registry = {}
+    if REGISTRY_PATH.exists():
+        registry = json.loads(REGISTRY_PATH.read_text())
+
+    content = f"""
 # Methodology
 
 ## Project Overview
@@ -67,4 +86,20 @@ All results are fully traceable through:
 - Journal logs
 - Auto-generated artifacts
 
-Generated on: 2026-02-01 15:30
+Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+""".strip()
+
+    path = DOCS_DIR / "methodology.md"
+    path.write_text(content, encoding="utf-8")
+
+    log_event(
+        event_type="METHODOLOGY_GENERATED",
+        title="Methodology document generated",
+        description="Auto-generated methodology section for IEEE submission.",
+        metadata={"path": str(path)}
+    )
+
+
+if __name__ == "__main__":
+    generate_methodology()
+    print("methodology.md generated")

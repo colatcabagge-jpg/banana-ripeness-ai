@@ -1,160 +1,127 @@
+import os
+from pathlib import Path
 import streamlit as st
+import subprocess
+
+from scripts.generate_methodology import generate_methodology
+from scripts.generate_results import generate_results
+
+
+# --------------------------------------------------
+# PAGE CONFIG
+# --------------------------------------------------
 
 st.set_page_config(
     page_title="Documentation | CVLab",
     layout="wide"
 )
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DOCS_DIR = PROJECT_ROOT / "docs"
+
+CVLAB_MODE = os.getenv("CVLAB_MODE", "dev").lower()
+IS_DEMO_MODE = CVLAB_MODE == "demo"
+
 st.title("📁 CVLab Documentation")
-st.caption("Research methodology, system design, and reproducibility")
+st.caption("Research methodology, system design, reproducibility, and results")
 
 st.divider()
 
-# --------------------------------------------------
-# 1. Motivation
-# --------------------------------------------------
-with st.expander("1️⃣ Project Motivation", expanded=True):
-    st.markdown(
-        """
-Food spoilage due to improper ripeness assessment leads to significant economic
-and nutritional loss. Bananas, being highly perishable, require timely decisions
-for consumption, storage, or processing.
-
-This project explores **computer vision–based ripeness detection** as a low-cost,
-scalable solution that can be deployed on consumer devices.
-"""
-    )
 
 # --------------------------------------------------
-# 2. System Overview
+# MANUAL REGENERATE CONTROLS
 # --------------------------------------------------
-with st.expander("2️⃣ System Overview (CVLab Framework)", expanded=True):
-    st.markdown(
-        """
-CVLab is a **modular computer vision research and deployment framework** designed to:
 
-- Train and compare models
-- Track experiments reproducibly
-- Register production models
-- Support collaborative teams
-- Deploy inference via web interfaces
+if not IS_DEMO_MODE:
+    with st.container():
+        col1, col2 = st.columns([1, 4])
 
-This banana project serves as **Project 1**, establishing a reusable foundation
-for future CV applications.
-"""
-    )
+        with col1:
+            if st.button("🔄 Regenerate Docs"):
+                with st.spinner("Regenerating methodology and results..."):
+                    generate_methodology()
+                    generate_results()
+                st.success("Documentation regenerated successfully.")
 
-# --------------------------------------------------
-# 3. Dataset Description
-# --------------------------------------------------
-with st.expander("3️⃣ Dataset Description"):
-    st.markdown(
-        """
-- **Source:** Public Kaggle banana ripeness dataset  
-- **Classes:** Unripe, Ripe, Overripe, Rotten  
-- **Total Images:** ~13,000  
-
-A dedicated Dataset Intelligence module audits:
-- Class imbalance
-- Distribution skew
-- Data quality issues
-"""
-    )
-
-# --------------------------------------------------
-# 4. Model Architecture
-# --------------------------------------------------
-with st.expander("4️⃣ Model Architecture"):
-    st.markdown(
-        """
-The system uses **MobileNetV2** with transfer learning:
-
-- Pretrained on ImageNet
-- Frozen backbone during initial training
-- Custom classification head
-
-This architecture balances:
-- Accuracy
-- Low computational cost
-- Suitability for CPU-based systems
-"""
-    )
-
-# --------------------------------------------------
-# 5. Training Methodology
-# --------------------------------------------------
-with st.expander("5️⃣ Training Methodology"):
-    st.markdown(
-        """
-Two training modes are supported:
-
-**DEV Mode**
-- Reduced dataset
-- Few epochs
-- Rapid iteration
-
-**FULL Mode**
-- Complete dataset
-- Extended training
-- Final model selection
-
-Each run generates:
-- Unique Experiment ID
-- Saved metrics & plots
-- Registry entry
-"""
-    )
-
-# --------------------------------------------------
-# 6. Evaluation Protocol
-# --------------------------------------------------
-with st.expander("6️⃣ Evaluation Protocol"):
-    st.markdown(
-        """
-- Metric: Classification Accuracy
-- Validation: Held-out split
-- Monitoring: Accuracy & Loss curves
-- Best model auto-selected via registry
-
-All evaluation artifacts are stored for traceability.
-"""
-    )
-
-# --------------------------------------------------
-# 7. Reproducibility & Collaboration
-# --------------------------------------------------
-with st.expander("7️⃣ Reproducibility & Collaboration"):
-    st.markdown(
-        """
-Reproducibility is ensured via:
-
-- Git version control
-- Experiment logging
-- Model registry (JSON-based)
-- Per-member configuration
-- Team logs and progress tracking
-
-Any team member can clone the repository and resume work immediately.
-"""
-    )
-
-# --------------------------------------------------
-# 8. Extension Roadmap
-# --------------------------------------------------
-with st.expander("8️⃣ Extension Roadmap"):
-    st.markdown(
-        """
-The CVLab framework is designed to scale to:
-
-- Weed detection & growth stage analysis
-- Smart gym form coaching
-- Cooking activity monitoring
-- Multi-fruit ripeness estimation
-- Real-time video inference
-
-This project establishes the **template** for all future systems.
-"""
-    )
+        with col2:
+            st.caption(
+                "Regenerates auto-generated Methodology and Results sections "
+                "from the latest system state."
+            )
+else:
+    st.info("🔒 Demo Mode: Documentation is read-only")
 
 st.divider()
-st.caption("CVLab — Designed for reproducible computer vision research")
+
+
+# --------------------------------------------------
+# HELPER: LOAD MARKDOWN SAFELY
+# --------------------------------------------------
+
+def render_md(title, path: Path, expanded=False):
+    with st.expander(title, expanded=expanded):
+        if path.exists():
+            st.markdown(path.read_text(encoding="utf-8"))
+            st.caption(f"Last updated: {path.stat().st_mtime_ns}")
+        else:
+            st.warning("Section not available yet.")
+
+
+# --------------------------------------------------
+# STATIC SECTIONS (INTRODUCTORY)
+# --------------------------------------------------
+
+render_md(
+    "1️⃣ Project Motivation",
+    DOCS_DIR / "motivation.md",
+    expanded=True
+)
+
+render_md(
+    "2️⃣ System Overview (CVLab Framework)",
+    DOCS_DIR / "overview.md",
+    expanded=True
+)
+
+
+# --------------------------------------------------
+# AUTO-GENERATED CORE SECTIONS
+# --------------------------------------------------
+
+render_md(
+    "3️⃣ Methodology (Auto-generated)",
+    DOCS_DIR / "methodology.md",
+    expanded=True
+)
+
+render_md(
+    "4️⃣ Results (Auto-generated)",
+    DOCS_DIR / "results.md",
+    expanded=True
+)
+
+
+# --------------------------------------------------
+# SUPPORTING DOCUMENTATION
+# --------------------------------------------------
+
+render_md(
+    "5️⃣ Dataset Notes",
+    DOCS_DIR / "dataset_notes.md"
+)
+
+render_md(
+    "6️⃣ Development Journal",
+    DOCS_DIR / "dev_journal.md"
+)
+
+
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
+
+st.divider()
+st.caption(
+    "CVLab — All documentation is auto-generated, version-controlled, "
+    "and traceable for reproducible research."
+)
