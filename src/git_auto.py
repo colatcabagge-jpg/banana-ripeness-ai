@@ -59,3 +59,26 @@ def auto_git_commit_for_latest_event():
     code, _, err = run("git push")
     if code != 0:
         raise RuntimeError(f"Git push failed: {err}")
+    
+def safe_checkpoint_push(reason: str):
+    """
+    Force-save all changes as a safe checkpoint.
+    Assumes system health is already verified.
+    """
+    code, out, _ = run("git status --porcelain")
+    if not out:
+        return "Repository already clean. Nothing to push."
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    message = f"checkpoint: {reason} [{timestamp}]"
+
+    run("git add .")
+    code, _, err = run(f'git commit -m "{message}"')
+    if code != 0:
+        raise RuntimeError(err)
+
+    code, _, err = run("git push")
+    if code != 0:
+        raise RuntimeError(err)
+
+    return message
