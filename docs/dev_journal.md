@@ -10,3 +10,75 @@
 
 Notes:
 - Local training crashed due to RAM load. Will optimize batch size and caching.
+## [2026-02-01 12:17:45] Registry updated
+
+Model registry updated after training.
+
+**Details:**
+- experiment_id: EXP-2026-02-01-1213-deckman-dev
+- val_accuracy: 0.987500011920929
+- mode: dev
+- member: deckman
+
+---
+
+## [2026-02-01 12:17:45] Training completed
+
+Model training completed successfully.
+
+**Details:**
+- experiment_id: EXP-2026-02-01-1213-deckman-dev
+- mode: dev
+- member: deckman
+- val_accuracy: 0.987500011920929
+- output_dir: outputs\EXP-2026-02-01-1213-deckman-dev
+
+---
+
+## [2026-02-01 12:30:09] IEEE figures and tables generated
+
+All IEEE-ready figures and tables were automatically generated.
+
+**Details:**
+- figures: ['C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_validation_accuracy.png', 'C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_best_model.png']
+- tables: ['C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\tables\\table_experiment_comparison.csv']
+- timestamp: 2026-02-01T12:30:09.742872
+
+---
+
+## [2026-02-01 12:33:51] IEEE figures and tables generated
+
+All IEEE-ready figures and tables were automatically generated.
+
+**Details:**
+- figures: ['C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_validation_accuracy.png', 'C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_best_model.png']
+- tables: ['C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\tables\\table_experiment_comparison.csv']
+- timestamp: 2026-02-01T12:33:51.918586
+
+---
+
+## [2026-02-01 13:05:25] Registry updated
+
+Model registry updated after training.
+
+**Details:**
+- experiment_id: EXP-2026-02-01-1301-deckman-dev
+- val_accuracy: 0.984375
+- mode: dev
+- member: deckman
+
+---
+
+## [2026-02-01 13:05:25] Training completed
+
+Model training completed successfully.
+
+**Details:**
+- experiment_id: EXP-2026-02-01-1301-deckman-dev
+- mode: dev
+- member: deckman
+- val_accuracy: 0.984375
+- output_dir: outputs\EXP-2026-02-01-1301-deckman-dev
+
+---
+

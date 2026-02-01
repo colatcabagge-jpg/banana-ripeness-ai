@@ -1,29 +1,25 @@
-import json
 import argparse
-from pathlib import Path
+from src.registry_manager import (
+    set_production_model,
+    lock_production,
+    unlock_production
+)
 
-REGISTRY_PATH = Path("registry/model_registry.json")
+parser = argparse.ArgumentParser()
+parser.add_argument("--set", help="Experiment ID to set as production")
+parser.add_argument("--lock", action="store_true")
+parser.add_argument("--unlock", action="store_true")
 
-def set_production_model(model_path: str):
-    if not REGISTRY_PATH.exists():
-        raise FileNotFoundError("Model registry not found.")
+args = parser.parse_args()
 
-    with open(REGISTRY_PATH, "r") as f:
-        registry = json.load(f)
+if args.set:
+    set_production_model(args.set)
+    print(f"Production model set to {args.set}")
 
-    if model_path not in [m["path"] for m in registry["models"]]:
-        raise ValueError("Model path not found in registry. Train/register first.")
+if args.lock:
+    lock_production()
+    print("Production model LOCKED")
 
-    registry["production_model"] = model_path
-
-    with open(REGISTRY_PATH, "w") as f:
-        json.dump(registry, f, indent=4)
-
-    print(f"✅ Production model set to: {model_path}")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_path", required=True)
-    args = parser.parse_args()
-
-    set_production_model(args.model_path)
+if args.unlock:
+    unlock_production()
+    print("Production model UNLOCKED")

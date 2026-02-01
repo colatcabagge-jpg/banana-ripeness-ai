@@ -1,0 +1,84 @@
+[
+  {
+    "timestamp": "2026-02-01 12:17:45",
+    "event_type": "REGISTRY_UPDATED",
+    "title": "Registry updated",
+    "description": "Model registry updated after training.",
+    "metadata": {
+      "experiment_id": "EXP-2026-02-01-1213-deckman-dev",
+      "val_accuracy": 0.987500011920929,
+      "mode": "dev",
+      "member": "deckman"
+    }
+  },
+  {
+    "timestamp": "2026-02-01 12:17:45",
+    "event_type": "TRAINING_COMPLETED",
+    "title": "Training completed",
+    "description": "Model training completed successfully.",
+    "metadata": {
+      "experiment_id": "EXP-2026-02-01-1213-deckman-dev",
+      "mode": "dev",
+      "member": "deckman",
+      "val_accuracy": 0.987500011920929,
+      "output_dir": "outputs\\EXP-2026-02-01-1213-deckman-dev"
+    }
+  },
+  {
+    "timestamp": "2026-02-01 12:30:09",
+    "event_type": "DOCS_GENERATED",
+    "title": "IEEE figures and tables generated",
+    "description": "All IEEE-ready figures and tables were automatically generated.",
+    "metadata": {
+      "figures": [
+        "C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_validation_accuracy.png",
+        "C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_best_model.png"
+      ],
+      "tables": [
+        "C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\tables\\table_experiment_comparison.csv"
+      ],
+      "timestamp": "2026-02-01T12:30:09.742872"
+    }
+  },
+  {
+    "timestamp": "2026-02-01 12:33:51",
+    "event_type": "DOCS_GENERATED",
+    "title": "IEEE figures and tables generated",
+    "description": "All IEEE-ready figures and tables were automatically generated.",
+    "metadata": {
+      "figures": [
+        "C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_validation_accuracy.png",
+        "C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\figures\\fig_best_model.png"
+      ],
+      "tables": [
+        "C:\\Users\\91994\\OneDrive\\Desktop\\banana-ripeness-ai\\docs\\tables\\table_experiment_comparison.csv"
+      ],
+      "timestamp": "2026-02-01T12:33:51.918586"
+    }
+  },
+  {
+    "timestamp": "2026-02-01 13:05:25",
+    "event_type": "REGISTRY_UPDATED",
+    "title": "Registry updated",
+    "description": "Model registry updated after training.",
+    "metadata": {
+      "experiment_id": "EXP-2026-02-01-1301-deckman-dev",
+      "val_accuracy": 0.984375,
+      "mode": "dev",
+      "member": "deckman"
+    }
+  },
+  {
+    "timestamp": "2026-02-01 13:05:25",
+    "event_type": "TRAINING_COMPLETED",
+    "title": "Training completed",
+    "description": "Model training completed successfully.",
+    "metadata": {
+      "experiment_id": "EXP-2026-02-01-1301-deckman-dev",
+      "mode": "dev",
+      "member": "deckman",
+      "val_accuracy": 0.984375,
+      "output_dir": "outputs\\EXP-2026-02-01-1301-deckman-dev"
+    }
+  }
+]

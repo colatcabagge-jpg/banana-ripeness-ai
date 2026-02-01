@@ -1,0 +1,1 @@
+Figure 2: Best performing model identified by CVLab registry (Experiment ID: EXP-2026-02-01-1213-deckman-dev).

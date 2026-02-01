@@ -1,0 +1,5 @@
+exp_id,path,accuracy,mode,member,val_accuracy
+EXP-2026-02-01-1213-deckman-dev,outputs\EXP-2026-02-01-1213-deckman-dev\model.keras,,dev,deckman,0.987500011920929
+EXP-2026-02-01-1036-deckman-dev,outputs\EXP-2026-02-01-1036-deckman-dev\model.keras,,dev,deckman,0.984375
+EXP-2026-02-01-1046-deckman-dev,outputs\EXP-2026-02-01-1046-deckman-dev\model.keras,,dev,deckman,0.9781249761581421
+EXP-2026-01-31-1034-deckman-dev,models\model_EXP-2026-01-31-1034-deckman-dev.keras,0.984375,dev,deckman,

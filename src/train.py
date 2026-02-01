@@ -1,51 +1,39 @@
-﻿import os
+﻿import argparse
 import json
-import datetime
-import argparse
 from pathlib import Path
 
+from src.journal_logger import log_event
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import matplotlib.pyplot as plt
-
-from src.utils import TRAIN_DIR, VAL_DIR, CLASS_NAMES, IMG_SIZE, BATCH_SIZE, SEED
-from src.registry_manager import register_model
+from src.git_auto import auto_git_commit_for_latest_event
 
 
-os.makedirs("models", exist_ok=True)
-os.makedirs("outputs", exist_ok=True)
+from src.utils import (
+    TRAIN_DIR,
+    VAL_DIR,
+    CLASS_NAMES,
+    IMG_SIZE,
+    BATCH_SIZE,
+    SEED
+)
+
+from src.experiment_manager import ExperimentManager
 
 
 # ===============================
-# CONFIG + EXPERIMENT HELPERS
+# CONFIG
 # ===============================
 
 def load_member_config():
     config_path = Path("config/member_config.json")
-
     if not config_path.exists():
         raise FileNotFoundError(
             "member_config.json missing. Copy template and fill values."
         )
-
     with open(config_path, "r") as f:
         return json.load(f)
-
-
-def generate_experiment_id(member_name):
-    now = datetime.datetime.now()
-    timestamp = now.strftime("%Y-%m-%d-%H%M")
-    return f"EXP-{timestamp}-{member_name}"
-
-
-def prepare_experiment_environment(exp_id):
-    output_dir = Path("outputs") / exp_id
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    model_path = Path("models") / f"model_{exp_id}.keras"
-
-    return output_dir, model_path
 
 
 # ===============================
@@ -71,7 +59,7 @@ def build_model(num_classes: int):
 
 
 # ===============================
-# DATASET SAMPLING
+# DATASET HELPERS
 # ===============================
 
 def sample_dataset(dataset, fraction):
@@ -81,55 +69,25 @@ def sample_dataset(dataset, fraction):
 
 
 # ===============================
-# GRAPH SAVE
+# PLOTS
 # ===============================
 
 def save_training_plots(history, output_dir):
-
     plt.figure()
     plt.plot(history.history["accuracy"], label="train_accuracy")
     plt.plot(history.history["val_accuracy"], label="val_accuracy")
-    plt.title("Accuracy vs Epoch")
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
     plt.legend()
+    plt.title("Accuracy vs Epoch")
     plt.savefig(output_dir / "accuracy_plot.png")
     plt.close()
 
     plt.figure()
     plt.plot(history.history["loss"], label="train_loss")
     plt.plot(history.history["val_loss"], label="val_loss")
-    plt.title("Loss vs Epoch")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
     plt.legend()
+    plt.title("Loss vs Epoch")
     plt.savefig(output_dir / "loss_plot.png")
     plt.close()
-
-
-# ===============================
-# MARKDOWN SUMMARY
-# ===============================
-
-def generate_markdown_summary(exp_id, member, laptop, mode, history, output_dir):
-
-    summary_path = output_dir / "summary.md"
-
-    with open(summary_path, "w") as f:
-        f.write(f"# Experiment {exp_id}\n\n")
-        f.write("## Experiment Info\n")
-        f.write(f"- Member: {member}\n")
-        f.write(f"- Laptop: {laptop}\n")
-        f.write(f"- Mode: {mode}\n\n")
-
-        f.write("## Final Metrics\n")
-        f.write(f"- Train Accuracy: {history.history['accuracy'][-1]:.4f}\n")
-        f.write(f"- Validation Accuracy: {history.history['val_accuracy'][-1]:.4f}\n")
-        f.write(f"- Train Loss: {history.history['loss'][-1]:.4f}\n")
-        f.write(f"- Validation Loss: {history.history['val_loss'][-1]:.4f}\n\n")
-
-        f.write("## Notes\n")
-        f.write("Auto generated experiment summary.\n")
 
 
 # ===============================
@@ -138,12 +96,13 @@ def generate_markdown_summary(exp_id, member, laptop, mode, history, output_dir)
 
 def main():
 
+    # -------- CLI --------
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", default="dev", choices=["dev", "full"])
     args = parser.parse_args()
-
     mode = args.mode.lower()
 
+    # -------- MODE CONFIG --------
     if mode == "dev":
         EPOCHS = 2
         SAMPLE_FRAC = 0.3
@@ -153,7 +112,7 @@ def main():
         SAMPLE_FRAC = 1.0
         USE_CACHE = True
 
-    # -------- CONFIG (SAFE + BACKWARD COMPATIBLE) --------
+    # -------- MEMBER CONFIG --------
     config = load_member_config()
 
     member_name = (
@@ -162,25 +121,19 @@ def main():
         or "unknown"
     )
 
-    laptop_name = (
-        config.get("laptop_name")
-        or config.get("laptop")
-        or "unknown"
+    # -------- EXPERIMENT START --------
+    exp = ExperimentManager(
+        member=member_name,
+        mode=mode
     )
-    # -----------------------------------------------------
-
-    exp_id = generate_experiment_id(member_name + "-" + mode)
-    output_dir, model_path = prepare_experiment_environment(exp_id)
 
     print("\n=====================================")
     print(f" MODE: {mode.upper()}")
-    print("=====================================")
-    print(f"Experiment ID: {exp_id}")
-    print(f"Member: {member_name}")
-    print(f"Laptop: {laptop_name}")
+    print(f" EXPERIMENT: {exp.exp_id}")
+    print(f" MEMBER: {member_name}")
     print("=====================================\n")
 
-    # Dataset
+    # -------- DATASETS --------
     train_ds = keras.utils.image_dataset_from_directory(
         TRAIN_DIR,
         labels="inferred",
@@ -206,13 +159,13 @@ def main():
     val_ds = sample_dataset(val_ds, SAMPLE_FRAC)
 
     AUTOTUNE = tf.data.AUTOTUNE
-
     if USE_CACHE:
         train_ds = train_ds.cache()
 
     train_ds = train_ds.prefetch(AUTOTUNE)
     val_ds = val_ds.prefetch(AUTOTUNE)
 
+    # -------- MODEL --------
     model = build_model(num_classes=len(CLASS_NAMES))
 
     model.compile(
@@ -221,58 +174,49 @@ def main():
         metrics=["accuracy"]
     )
 
-    callbacks = [
-        keras.callbacks.ModelCheckpoint(
-            str(model_path),
-            save_best_only=True,
-            monitor="val_accuracy",
-            mode="max"
-        ),
-        keras.callbacks.EarlyStopping(
-            monitor="val_accuracy",
-            patience=3,
-            restore_best_weights=True
-        )
-    ]
-
     history = model.fit(
         train_ds,
         validation_data=val_ds,
-        epochs=EPOCHS,
-        callbacks=callbacks
+        epochs=EPOCHS
     )
 
-    metrics_path = output_dir / "metrics.txt"
-
-    with open(metrics_path, "w") as f:
-        f.write(f"Experiment ID: {exp_id}\n")
-        f.write(f"Mode: {mode}\n")
-        f.write(f"Member: {member_name}\n")
-        f.write(f"Laptop: {laptop_name}\n")
-        f.write(f"Train Acc: {history.history['accuracy'][-1]}\n")
-        f.write(f"Val Acc: {history.history['val_accuracy'][-1]}\n")
-
-    save_training_plots(history, output_dir)
-    generate_markdown_summary(
-        exp_id, member_name, laptop_name, mode, history, output_dir
-    )
-
+    # -------- METRICS --------
+    final_train_acc = history.history["accuracy"][-1]
     final_val_acc = history.history["val_accuracy"][-1]
 
-    register_model(
-        exp_id=exp_id,
-        model_path=model_path,
-        accuracy=final_val_acc,
-        mode=mode,
-        member=member_name
+    metrics = {
+        "train_accuracy": float(final_train_acc),
+        "val_accuracy": float(final_val_acc),
+        "epochs": EPOCHS,
+        "mode": mode
+    }
+
+    # -------- SAVE VIA EXPERIMENT MANAGER --------
+    exp.save_model(model)
+    exp.save_metrics(metrics)
+    save_training_plots(history, exp.exp_dir)
+    exp.save_summary()
+    exp.finalize()
+
+    log_event(
+    event_type="TRAINING_COMPLETED",
+    title="Training completed",
+    description="Model training completed successfully.",
+    metadata={
+        "experiment_id": exp.exp_id,
+        "mode": mode,
+        "member": member_name,
+        "val_accuracy": metrics.get("val_accuracy"),
+        "output_dir": str(exp.exp_dir),
+    },
     )
+    auto_git_commit_for_latest_event()
 
     print("\n=====================================")
     print(" TRAINING COMPLETE")
     print("=====================================")
-    print(f"Experiment: {exp_id}")
-    print(f"Model Saved: {model_path}")
-    print(f"Outputs Folder: {output_dir}")
+    print(f" EXPERIMENT: {exp.exp_id}")
+    print(f" OUTPUT DIR: {exp.exp_dir}")
     print("=====================================\n")
 
 

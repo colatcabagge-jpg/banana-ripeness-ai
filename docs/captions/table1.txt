@@ -1,0 +1,1 @@
+Table 1: Comparison of all experiments conducted in CVLab, sorted by validation accuracy.

@@ -1,13 +1,41 @@
 {
-    "best_model": "models\\model_EXP-2026-01-31-1034-deckman-dev.keras",
-    "production_model": "models\\model_EXP-2026-01-31-1034-deckman-dev.keras",
-    "models": [
-        {
-            "exp_id": "EXP-2026-01-31-1034-deckman-dev",
-            "path": "models\\model_EXP-2026-01-31-1034-deckman-dev.keras",
-            "accuracy": 0.984375,
-            "mode": "dev",
-            "member": "deckman"
-        }
-    ]
+  "best_model": "EXP-2026-02-01-1213-deckman-dev",
+  "production_model": "models\\model_EXP-2026-01-31-1034-deckman-dev.keras",
+  "models": [
+    {
+      "exp_id": "EXP-2026-01-31-1034-deckman-dev",
+      "path": "models\\model_EXP-2026-01-31-1034-deckman-dev.keras",
+      "accuracy": 0.984375,
+      "mode": "dev",
+      "member": "deckman"
+    },
+    {
+      "exp_id": "EXP-2026-02-01-1036-deckman-dev",
+      "path": "outputs\\EXP-2026-02-01-1036-deckman-dev\\model.keras",
+      "val_accuracy": 0.984375,
+      "mode": "dev",
+      "member": "deckman"
+    },
+    {
+      "exp_id": "EXP-2026-02-01-1046-deckman-dev",
+      "path": "outputs\\EXP-2026-02-01-1046-deckman-dev\\model.keras",
+      "val_accuracy": 0.9781249761581421,
+      "mode": "dev",
+      "member": "deckman"
+    },
+    {
+      "exp_id": "EXP-2026-02-01-1213-deckman-dev",
+      "path": "outputs\\EXP-2026-02-01-1213-deckman-dev\\model.keras",
+      "val_accuracy": 0.987500011920929,
+      "mode": "dev",
+      "member": "deckman"
+    },
+    {
+      "exp_id": "EXP-2026-02-01-1301-deckman-dev",
+      "path": "outputs\\EXP-2026-02-01-1301-deckman-dev\\model.keras",
+      "val_accuracy": 0.984375,
+      "mode": "dev",
+      "member": "deckman"
+    }
+  ]
 }
