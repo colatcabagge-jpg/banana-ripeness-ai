@@ -1,10 +1,10 @@
 ﻿import os
 
-DATASET_DIR = os.path.join("dataset", "Banana Ripeness Classification Dataset")
+DATASET_DIR = os.path.join("data", "banana_ripeness")
 
 TRAIN_DIR = os.path.join(DATASET_DIR, "train")
-VAL_DIR = os.path.join(DATASET_DIR, "valid")
-TEST_DIR = os.path.join(DATASET_DIR, "test")
+VAL_DIR   = os.path.join(DATASET_DIR, "valid")
+TEST_DIR  = os.path.join(DATASET_DIR, "test")
 
 CLASS_NAMES = ["unripe", "ripe", "overripe", "rotten"]
 
