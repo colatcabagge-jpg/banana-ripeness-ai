@@ -4,6 +4,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import tensorflow as tf
+import os
 
 # ----------------------------------
 # Page config
@@ -14,88 +15,117 @@ st.set_page_config(
 )
 
 st.title("🍌 Banana Ripeness Detection")
-st.caption("Production inference using the currently deployed CVLab model")
-
+st.caption("Production inference using the deployed CVLab model")
 st.divider()
+
+# ----------------------------------
+# Working directory sanity check
+# ----------------------------------
+PROJECT_ROOT = Path.cwd()
+EXPECTED = "banana-ripeness-ai"
+
+if PROJECT_ROOT.name != EXPECTED:
+    st.error("❌ CVLab is running from the wrong directory.")
+    st.code(f"Current directory: {PROJECT_ROOT}")
+    st.code("Expected directory name: banana-ripeness-ai")
+    st.stop()
+
+st.caption(f"📂 Running from: `{PROJECT_ROOT}`")
 
 # ----------------------------------
 # Paths
 # ----------------------------------
 REGISTRY_PATH = Path("registry/model_registry.json")
+MODELS_DIR = Path("models")
 
 # ----------------------------------
-# Load production model
+# Load registry
 # ----------------------------------
 if not REGISTRY_PATH.exists():
     st.error("❌ Model registry not found.")
     st.stop()
 
-with open(REGISTRY_PATH, "r") as f:
-    registry = json.load(f)
+registry = json.loads(REGISTRY_PATH.read_text())
+production_exp_id = registry.get("production_model")
 
-production_model_path = registry.get("production_model")
-
-if not production_model_path:
-    st.warning("⚠️ No production model set yet.")
+if not production_exp_id:
+    st.warning("⚠️ No production model is set yet.")
+    st.info(
+        "To enable inference:\n"
+        "• Train a FULL model\n"
+        "• Promote it to production\n"
+        "• Or copy an existing production model here"
+    )
     st.stop()
 
-model = tf.keras.models.load_model(production_model_path)
+model_path = MODELS_DIR / f"model_{production_exp_id}.keras"
+
+# ----------------------------------
+# FAILSAFE: missing production model
+# ----------------------------------
+if not model_path.exists():
+    st.error("❌ Production model file not found on this system.")
+    st.code(str(model_path))
+    st.info(
+        "This happens when:\n"
+        "• The model was trained on another laptop\n"
+        "• The models/ folder was cleaned\n\n"
+        "**How to fix:**\n"
+        "1️⃣ Train a FULL model on this machine\n"
+        "2️⃣ Or copy the production `.keras` file into `models/`\n"
+        "3️⃣ Or reset production model selection"
+    )
+    st.stop()
+
+# ----------------------------------
+# Load model (SAFE)
+# ----------------------------------
+model = tf.keras.models.load_model(model_path)
 
 CLASS_NAMES = ["overripe", "ripe", "rotten", "unripe"]
 IMG_SIZE = (224, 224)
 
 # ----------------------------------
-# Helper functions
+# Helpers
 # ----------------------------------
-def preprocess_image(img: Image.Image):
-    img = img.convert("RGB")
-    img = img.resize(IMG_SIZE)
+def preprocess_image(img):
+    img = img.convert("RGB").resize(IMG_SIZE)
     arr = np.array(img)
     arr = tf.keras.applications.mobilenet_v2.preprocess_input(arr)
     return np.expand_dims(arr, axis=0)
 
-def predict(img: Image.Image):
-    x = preprocess_image(img)
-    preds = model.predict(x, verbose=0)[0]
+def predict(img):
+    preds = model.predict(preprocess_image(img), verbose=0)[0]
     idx = int(np.argmax(preds))
     return CLASS_NAMES[idx], float(preds[idx])
 
-def shelf_life_estimate(label: str, confidence: float):
-    base_days = {
-        "unripe": 5,
-        "ripe": 2,
-        "overripe": 1,
-        "rotten": 0
-    }
-    days = base_days[label] * confidence
-    return round(days, 2)
+def shelf_life_estimate(label, confidence):
+    base = {"unripe": 5, "ripe": 2, "overripe": 1, "rotten": 0}
+    return round(base[label] * confidence, 2)
 
-def recommendation(label: str):
+def recommendation(label):
     return {
-        "unripe": "Keep at room temperature. Not ready to eat yet.",
+        "unripe": "Keep at room temperature. Not ready yet.",
         "ripe": "Best time to eat. Consume soon.",
         "overripe": "Use immediately for smoothies or baking.",
-        "rotten": "Not safe for consumption."
+        "rotten": "Not safe for consumption.",
     }[label]
 
 # ----------------------------------
-# UI Layout
+# UI
 # ----------------------------------
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("📤 Upload Banana Image")
     uploaded = st.file_uploader(
-        "Upload a banana image",
+        "Upload banana image",
         type=["jpg", "jpeg", "png"]
     )
 
 with col2:
-    st.subheader("📸 Live Camera Capture")
     captured = st.camera_input("Take a photo")
 
 image = None
-
 if uploaded:
     image = Image.open(uploaded)
 elif captured:
@@ -108,7 +138,7 @@ if image:
     st.divider()
     st.subheader("🧠 Prediction Result")
 
-    st.image(image, caption="Input Image", use_container_width=True)
+    st.image(image, caption="Input Image", width="stretch")
 
     label, confidence = predict(image)
     days_left = shelf_life_estimate(label, confidence)
@@ -127,6 +157,4 @@ if image:
 # Footer
 # ----------------------------------
 st.divider()
-st.caption(
-    f"🚀 Using production model: `{Path(production_model_path).name}`"
-)
+st.caption(f"🚀 Using production model: `{model_path.name}`")
