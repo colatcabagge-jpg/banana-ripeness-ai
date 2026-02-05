@@ -219,3 +219,28 @@ Model training completed successfully.
 
 ---
 
+## [2026-02-05 23:19:41] Registry updated
+
+Model registry updated after training.
+
+**Details:**
+- experiment_id: EXP-2026-02-05-2142-kishor-full
+- val_accuracy: 0.9723953604698181
+- mode: full
+- member: kishor
+
+---
+
+## [2026-02-05 23:19:41] Training completed
+
+Model training completed successfully.
+
+**Details:**
+- experiment_id: EXP-2026-02-05-2142-kishor-full
+- mode: full
+- member: kishor
+- val_accuracy: 0.9723953604698181
+- output_dir: outputs\EXP-2026-02-05-2142-kishor-full
+
+---
+

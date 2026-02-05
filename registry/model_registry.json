@@ -43,6 +43,13 @@
       "val_accuracy": 0.984375,
       "mode": "dev",
       "member": "kishor"
+    },
+    {
+      "exp_id": "EXP-2026-02-05-2142-kishor-full",
+      "path": "outputs\\EXP-2026-02-05-2142-kishor-full\\model.keras",
+      "val_accuracy": 0.9723953604698181,
+      "mode": "full",
+      "member": "kishor"
     }
   ]
 }
