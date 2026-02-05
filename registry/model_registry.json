@@ -36,6 +36,13 @@
       "val_accuracy": 0.984375,
       "mode": "dev",
       "member": "deckman"
+    },
+    {
+      "exp_id": "EXP-2026-02-05-2054-kishor-dev",
+      "path": "outputs\\EXP-2026-02-05-2054-kishor-dev\\model.keras",
+      "val_accuracy": 0.984375,
+      "mode": "dev",
+      "member": "kishor"
     }
   ]
 }

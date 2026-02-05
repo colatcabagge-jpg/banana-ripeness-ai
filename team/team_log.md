@@ -24,3 +24,4 @@ Aadithya (GPU Training Test)
 [2026-02-01 10:50] deckman ran experiment EXP-2026-02-01-1046-deckman-dev
 [2026-02-01 12:17] deckman ran experiment EXP-2026-02-01-1213-deckman-dev
 [2026-02-01 13:05] deckman ran experiment EXP-2026-02-01-1301-deckman-dev
+[2026-02-05 20:58] kishor ran experiment EXP-2026-02-05-2054-kishor-dev

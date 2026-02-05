@@ -196,5 +196,30 @@
       "checks_passed": 6,
       "checks_failed": 1
     }
+  },
+  {
+    "timestamp": "2026-02-05 20:58:42",
+    "event_type": "REGISTRY_UPDATED",
+    "title": "Registry updated",
+    "description": "Model registry updated after training.",
+    "metadata": {
+      "experiment_id": "EXP-2026-02-05-2054-kishor-dev",
+      "val_accuracy": 0.984375,
+      "mode": "dev",
+      "member": "kishor"
+    }
+  },
+  {
+    "timestamp": "2026-02-05 20:58:42",
+    "event_type": "TRAINING_COMPLETED",
+    "title": "Training completed",
+    "description": "Model training completed successfully.",
+    "metadata": {
+      "experiment_id": "EXP-2026-02-05-2054-kishor-dev",
+      "mode": "dev",
+      "member": "kishor",
+      "val_accuracy": 0.984375,
+      "output_dir": "outputs\\EXP-2026-02-05-2054-kishor-dev"
+    }
   }
 ]
