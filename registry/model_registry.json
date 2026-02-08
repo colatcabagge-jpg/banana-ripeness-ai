@@ -1,6 +1,6 @@
 {
   "best_model": "EXP-2026-02-01-1213-deckman-dev",
-  "production_model": "models\\model_EXP-2026-01-31-1034-deckman-dev.keras",
+  "production_model": "EXP-2026-02-05-2142-kishor-full",
   "models": [
     {
       "exp_id": "EXP-2026-01-31-1034-deckman-dev",
@@ -51,5 +51,6 @@
       "mode": "full",
       "member": "kishor"
     }
-  ]
+  ],
+  "production_locked": true
 }

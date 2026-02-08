@@ -4,157 +4,163 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import tensorflow as tf
-import os
 
 # ----------------------------------
-# Page config
+# PAGE CONFIG
 # ----------------------------------
 st.set_page_config(
-    page_title="Banana Ripeness Inference | CVLab",
+    page_title="Banana Ripeness AI | Production",
     layout="wide"
 )
 
 st.title("🍌 Banana Ripeness Detection")
-st.caption("Production inference using the deployed CVLab model")
+st.caption("Production inference using trained CVLab model")
 st.divider()
 
 # ----------------------------------
-# Working directory sanity check
+# PATHS
 # ----------------------------------
 PROJECT_ROOT = Path.cwd()
-EXPECTED = "banana-ripeness-ai"
+REGISTRY_PATH = Path("registry/model_registry.json")
+MODELS_DIR = Path("models")
 
-if PROJECT_ROOT.name != EXPECTED:
-    st.error("❌ CVLab is running from the wrong directory.")
-    st.code(f"Current directory: {PROJECT_ROOT}")
-    st.code("Expected directory name: banana-ripeness-ai")
+# ----------------------------------
+# VERIFY PROJECT ROOT
+# ----------------------------------
+if PROJECT_ROOT.name != "banana-ripeness-ai":
+    st.error("❌ Wrong working directory")
+    st.code(str(PROJECT_ROOT))
     st.stop()
 
 st.caption(f"📂 Running from: `{PROJECT_ROOT}`")
 
 # ----------------------------------
-# Paths
-# ----------------------------------
-REGISTRY_PATH = Path("registry/model_registry.json")
-MODELS_DIR = Path("models")
-
-# ----------------------------------
-# Load registry
+# LOAD REGISTRY
 # ----------------------------------
 if not REGISTRY_PATH.exists():
-    st.error("❌ Model registry not found.")
+    st.error("❌ model_registry.json missing")
     st.stop()
 
 registry = json.loads(REGISTRY_PATH.read_text())
-production_exp_id = registry.get("production_model")
+production_exp = registry.get("production_model")
 
-if not production_exp_id:
-    st.warning("⚠️ No production model is set yet.")
-    st.info(
-        "To enable inference:\n"
-        "• Train a FULL model\n"
-        "• Promote it to production\n"
-        "• Or copy an existing production model here"
-    )
+if not production_exp:
+    st.warning("⚠️ No production model set yet")
     st.stop()
 
-model_path = MODELS_DIR / f"model_{production_exp_id}.keras"
+model_path = MODELS_DIR / f"model_{production_exp}.keras"
 
 # ----------------------------------
-# FAILSAFE: missing production model
+# FAILSAFE MODEL CHECK
 # ----------------------------------
 if not model_path.exists():
-    st.error("❌ Production model file not found on this system.")
+    st.error("❌ Production model not found")
     st.code(str(model_path))
-    st.info(
-        "This happens when:\n"
-        "• The model was trained on another laptop\n"
-        "• The models/ folder was cleaned\n\n"
-        "**How to fix:**\n"
-        "1️⃣ Train a FULL model on this machine\n"
-        "2️⃣ Or copy the production `.keras` file into `models/`\n"
-        "3️⃣ Or reset production model selection"
-    )
     st.stop()
 
 # ----------------------------------
-# Load model (SAFE)
+# LOAD MODEL
 # ----------------------------------
-model = tf.keras.models.load_model(model_path)
+@st.cache_resource
+def load_model_safe(path):
+    return tf.keras.models.load_model(path)
 
-CLASS_NAMES = ["overripe", "ripe", "rotten", "unripe"]
+model = load_model_safe(model_path)
+
+# IMPORTANT: correct class order (same as training)
+from src.utils import CLASS_NAMES
+
 IMG_SIZE = (224, 224)
 
 # ----------------------------------
-# Helpers
+# PREPROCESS (MATCH TRAINING EXACTLY)
 # ----------------------------------
-def preprocess_image(img):
+def preprocess(img):
     img = img.convert("RGB").resize(IMG_SIZE)
-    arr = np.array(img)
+    arr = np.array(img, dtype=np.float32)
     arr = tf.keras.applications.mobilenet_v2.preprocess_input(arr)
     return np.expand_dims(arr, axis=0)
 
+# ----------------------------------
+# PREDICT
+# ----------------------------------
 def predict(img):
-    preds = model.predict(preprocess_image(img), verbose=0)[0]
+    preds = model.predict(preprocess(img), verbose=0)[0]
     idx = int(np.argmax(preds))
-    return CLASS_NAMES[idx], float(preds[idx])
+    label = CLASS_NAMES[idx]
+    confidence = float(preds[idx])
+    return label, confidence, preds
 
-def shelf_life_estimate(label, confidence):
-    base = {"unripe": 5, "ripe": 2, "overripe": 1, "rotten": 0}
-    return round(base[label] * confidence, 2)
+# ----------------------------------
+# SHELF LIFE LOGIC
+# ----------------------------------
+def shelf_life(label):
+    mapping = {
+        "unripe": 5,
+        "ripe": 2,
+        "overripe": 1,
+        "rotten": 0
+    }
+    return mapping.get(label, 0)
 
 def recommendation(label):
     return {
         "unripe": "Keep at room temperature. Not ready yet.",
-        "ripe": "Best time to eat. Consume soon.",
+        "ripe": "Perfect to eat now. Consume soon.",
         "overripe": "Use immediately for smoothies or baking.",
         "rotten": "Not safe for consumption.",
     }[label]
 
 # ----------------------------------
-# UI
+# UI INPUT
 # ----------------------------------
 col1, col2 = st.columns(2)
 
 with col1:
-    uploaded = st.file_uploader(
-        "Upload banana image",
-        type=["jpg", "jpeg", "png"]
-    )
+    uploaded = st.file_uploader("Upload banana image", type=["jpg","jpeg","png"])
 
 with col2:
-    captured = st.camera_input("Take a photo")
+    captured = st.camera_input("Take photo")
 
-image = None
+img = None
 if uploaded:
-    image = Image.open(uploaded)
+    img = Image.open(uploaded)
 elif captured:
-    image = Image.open(captured)
+    img = Image.open(captured)
 
 # ----------------------------------
-# Inference
+# INFERENCE DISPLAY
 # ----------------------------------
-if image:
+if img:
     st.divider()
     st.subheader("🧠 Prediction Result")
 
-    st.image(image, caption="Input Image", width="stretch")
+    c1, c2 = st.columns([1,1])
 
-    label, confidence = predict(image)
-    days_left = shelf_life_estimate(label, confidence)
+    with c1:
+        st.image(img, caption="Input Image", use_container_width=True)
 
-    st.markdown(f"## **{label.upper()}**")
-    st.progress(min(confidence, 1.0))
-    st.write(f"**Confidence:** {confidence * 100:.2f}%")
+    label, conf, raw = predict(img)
 
-    st.divider()
-    st.subheader("⏳ Estimated Shelf Life")
-    st.metric("Days Remaining", f"{days_left} days")
+    with c2:
+        st.markdown(f"## 🏷️ {label.upper()}")
+        st.progress(min(conf,1.0))
+        st.write(f"**Confidence:** {conf*100:.2f}%")
 
-    st.info(recommendation(label))
+        st.divider()
+        st.subheader("📊 Class Probabilities")
+
+        for i, cname in enumerate(CLASS_NAMES):
+            st.write(f"**{cname}**")
+            st.progress(float(raw[i]))
+
+        st.divider()
+        days = shelf_life(label)
+        st.metric("Estimated shelf life", f"{days} days")
+        st.info(recommendation(label))
 
 # ----------------------------------
-# Footer
+# FOOTER
 # ----------------------------------
 st.divider()
 st.caption(f"🚀 Using production model: `{model_path.name}`")
